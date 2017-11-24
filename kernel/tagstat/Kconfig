@@ -1,0 +1,5 @@
+config TAGSTAT
+	bool "Read PID tags in /proc file"
+	default y
+	---help---
+	Reads PID tags created by "ptag" into /proc/tagstat

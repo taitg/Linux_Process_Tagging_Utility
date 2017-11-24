@@ -1,0 +1,576 @@
+diff -prauN linux-2.6.32.22-PRISTINE/arch/x86/include/asm/unistd_32.h linux-2.6.32.22/arch/x86/include/asm/unistd_32.h
+--- linux-2.6.32.22-PRISTINE/arch/x86/include/asm/unistd_32.h	2016-06-15 12:37:10.851814418 -0600
++++ linux-2.6.32.22/arch/x86/include/asm/unistd_32.h	2016-06-15 14:48:50.172822001 -0600
+@@ -342,10 +342,11 @@
+ #define __NR_pwritev		334
+ #define __NR_rt_tgsigqueueinfo	335
+ #define __NR_perf_event_open	336
++#define __NR_ptag		337
+ 
+ #ifdef __KERNEL__
+ 
+-#define NR_syscalls 337
++#define NR_syscalls 338
+ 
+ #define __ARCH_WANT_IPC_PARSE_VERSION
+ #define __ARCH_WANT_OLD_READDIR
+diff -prauN linux-2.6.32.22-PRISTINE/arch/x86/include/asm/unistd_64.h linux-2.6.32.22/arch/x86/include/asm/unistd_64.h
+--- linux-2.6.32.22-PRISTINE/arch/x86/include/asm/unistd_64.h	2016-06-15 12:37:10.853814413 -0600
++++ linux-2.6.32.22/arch/x86/include/asm/unistd_64.h	2016-06-15 14:49:15.181756036 -0600
+@@ -661,6 +661,8 @@ __SYSCALL(__NR_pwritev, sys_pwritev)
+ __SYSCALL(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo)
+ #define __NR_perf_event_open			298
+ __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
++#define __NR_ptag				299
++__SYSCALL(__NR_ptag, sys_ptag)
+ 
+ #ifndef __NO_STUBS
+ #define __ARCH_WANT_OLD_READDIR
+diff -prauN linux-2.6.32.22-PRISTINE/arch/x86/Kconfig linux-2.6.32.22/arch/x86/Kconfig
+--- linux-2.6.32.22-PRISTINE/arch/x86/Kconfig	2016-06-15 12:37:10.854814411 -0600
++++ linux-2.6.32.22/arch/x86/Kconfig	2016-06-15 17:03:51.798755262 -0600
+@@ -2096,3 +2096,7 @@ source "crypto/Kconfig"
+ source "arch/x86/kvm/Kconfig"
+ 
+ source "lib/Kconfig"
++
++source "ptag/Kconfig"
++
++source "tagstat/Kconfig"
+diff -prauN linux-2.6.32.22-PRISTINE/arch/x86/kernel/syscall_table_32.S linux-2.6.32.22/arch/x86/kernel/syscall_table_32.S
+--- linux-2.6.32.22-PRISTINE/arch/x86/kernel/syscall_table_32.S	2016-06-15 12:37:10.851814418 -0600
++++ linux-2.6.32.22/arch/x86/kernel/syscall_table_32.S	2016-06-15 14:48:11.703766018 -0600
+@@ -336,3 +336,4 @@ ENTRY(sys_call_table)
+ 	.long sys_pwritev
+ 	.long sys_rt_tgsigqueueinfo	/* 335 */
+ 	.long sys_perf_event_open
++	.long sys_ptag			/* 337 */
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r100_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/r100_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r100_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/r100_reg_safe.h	2016-06-15 13:25:57.909979238 -0600
+@@ -0,0 +1,28 @@
++static const unsigned r100_reg_safe_bm[102] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFCF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFF9F, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x38E7FE1F, 0xFFC3FF8E, 0x7FF8FFFF, 0xFFFF803C,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFEFFFF, 0xFFFFFFFF,
++	0x00000000, 0xFFFFFFFD, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFCFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFEF,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r200_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/r200_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r200_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/r200_reg_safe.h	2016-06-15 13:26:02.287970456 -0600
+@@ -0,0 +1,28 @@
++static const unsigned r200_reg_safe_bm[102] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFE7FE1F, 0xF003FFFF, 0x7EFFFFFF, 0xFFFF803C,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFEFCE, 0xFFFEFFFF, 0xFFFFFFFE,
++	0x020E0FF0, 0xFFFC83FD, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFBFFFF, 0xEFFCFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xDFDFDFDF, 0x3FFDDFDF, 0xFFFFFFFF, 0xFFFFFF7F,
++	0xFFFFFFFF, 0x00FFFFFF, 0x00000000, 0x00000000,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFE3F, 0xFFFFFFEF,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r300_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/r300_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/r300_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/r300_reg_safe.h	2016-06-15 13:25:58.143978038 -0600
+@@ -0,0 +1,42 @@
++static const unsigned r300_reg_safe_bm[159] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFF03F,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFEFCE, 0xF00EBFFF, 0x007C0000,
++	0xF0000078, 0xFF000009, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFF7FF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFC78, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF,
++	0x38FF8F50, 0xFFF88082, 0xF000000C, 0xFAE009FF,
++	0x0000FFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000,
++	0x00000000, 0x0000C100, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0xFFFF0000, 0xFFFFFFFF, 0xFF80FFFF,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x0003FC01, 0xFFFFFCF8, 0xFF800B19,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rn50_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/rn50_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rn50_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/rn50_reg_safe.h	2016-06-15 13:25:57.940978304 -0600
+@@ -0,0 +1,28 @@
++static const unsigned rn50_reg_safe_bm[102] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rs600_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/rs600_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rs600_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/rs600_reg_safe.h	2016-06-15 13:25:59.899974825 -0600
+@@ -0,0 +1,57 @@
++static const unsigned rs600_reg_safe_bm[219] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFF03F,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFEFCE, 0xF00EBFFF, 0x007C0000,
++	0xF0000078, 0xFF000009, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFF7FF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFC78, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF,
++	0x38FF8F50, 0xFFF88082, 0xF000000C, 0xFAE009FF,
++	0x0000FFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000,
++	0x00000000, 0x0000C100, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0xFFFF0000, 0xFFFFFFFF, 0xFF80FFFF,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x0003FC01, 0xFFFFFCF8, 0xFF800B19, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rv515_reg_safe.h linux-2.6.32.22/drivers/gpu/drm/radeon/rv515_reg_safe.h
+--- linux-2.6.32.22-PRISTINE/drivers/gpu/drm/radeon/rv515_reg_safe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/drivers/gpu/drm/radeon/rv515_reg_safe.h	2016-06-15 13:26:01.201972443 -0600
+@@ -0,0 +1,57 @@
++static const unsigned rv515_reg_safe_bm[219] = {
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x17FF1FFF, 0xFFFFFFFC, 0xFFFFFFFF, 0xFF30FFBF,
++	0xFFFFFFF8, 0xC3E6FFFF, 0xFFFFF6DF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFF03F,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFEFCE, 0xF00EBFFF, 0x007C0000,
++	0xF0000038, 0xFF000009, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFF7FF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0x1FFFFC78, 0xFFFFE000, 0xFFFFFFFE, 0xFFFFFFFF,
++	0x38CF8F50, 0xFFF88082, 0xFF0000FC, 0xFAE009FF,
++	0x0000FFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000,
++	0xFFFF8CFC, 0xFFFFC1FF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF80FFFF,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x0003FC01, 0x3FFFFCF8, 0xFF800B19, 0xFFDFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
++};
+diff -prauN linux-2.6.32.22-PRISTINE/include/linux/sched.h linux-2.6.32.22/include/linux/sched.h
+--- linux-2.6.32.22-PRISTINE/include/linux/sched.h	2016-06-15 12:37:16.687799561 -0600
++++ linux-2.6.32.22/include/linux/sched.h	2016-06-16 12:32:03.992484729 -0600
+@@ -94,6 +94,8 @@ struct sched_param {
+ 
+ #include <asm/processor.h>
+ 
++//#include <linux/list.h>
++
+ struct exec_domain;
+ struct futex_pi_state;
+ struct robust_list_head;
+@@ -1221,6 +1223,11 @@ struct sched_rt_entity {
+ 
+ struct rcu_node;
+ 
++struct ptag_node {
++	struct list_head list;
++	char *ptag;
++};
++
+ struct task_struct {
+ 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+ 	void *stack;
+@@ -1547,8 +1554,12 @@ struct task_struct {
+ 	/* bitmask of trace recursion */
+ 	unsigned long trace_recursion;
+ #endif /* CONFIG_TRACING */
++
++	struct list_head ptag_list;
+ };
+ 
++
++
+ /* Future-safe accessor for struct task_struct's cpus_allowed. */
+ #define tsk_cpumask(tsk) (&(tsk)->cpus_allowed)
+ 
+diff -prauN linux-2.6.32.22-PRISTINE/include/linux/syscalls.h linux-2.6.32.22/include/linux/syscalls.h
+--- linux-2.6.32.22-PRISTINE/include/linux/syscalls.h	2016-06-15 12:37:16.652799649 -0600
++++ linux-2.6.32.22/include/linux/syscalls.h	2016-06-16 14:29:36.563676747 -0600
+@@ -885,4 +885,7 @@ asmlinkage long sys_perf_event_open(
+ asmlinkage long sys_mmap_pgoff(unsigned long addr, unsigned long len,
+ 			unsigned long prot, unsigned long flags,
+ 			unsigned long fd, unsigned long pgoff);
++
++asmlinkage long sys_ptag(pid_t pid, char *tag, int mode);
++
+ #endif
+diff -prauN linux-2.6.32.22-PRISTINE/kernel/fork.c linux-2.6.32.22/kernel/fork.c
+--- linux-2.6.32.22-PRISTINE/kernel/fork.c	2016-06-15 12:37:11.041813933 -0600
++++ linux-2.6.32.22/kernel/fork.c	2016-06-16 12:21:05.453490698 -0600
+@@ -1061,6 +1061,7 @@ static struct task_struct *copy_process(
+ 	copy_flags(clone_flags, p);
+ 	INIT_LIST_HEAD(&p->children);
+ 	INIT_LIST_HEAD(&p->sibling);
++	INIT_LIST_HEAD(&p->ptag_list);
+ 	rcu_copy_process(p);
+ 	p->vfork_done = NULL;
+ 	spin_lock_init(&p->alloc_lock);
+diff -prauN linux-2.6.32.22-PRISTINE/Makefile linux-2.6.32.22/Makefile
+--- linux-2.6.32.22-PRISTINE/Makefile	2016-06-15 12:37:11.047813918 -0600
++++ linux-2.6.32.22/Makefile	2016-06-15 16:41:39.305349814 -0600
+@@ -1,8 +1,8 @@
+ VERSION = 2
+ PATCHLEVEL = 6
+ SUBLEVEL = 32
+-EXTRAVERSION = .22
+-NAME = Man-Eating Seals of Antiquity
++EXTRAVERSION = CPSC457
++NAME = CPSC 457 Tutorial Kernel
+ 
+ # *DOCUMENTATION*
+ # To see a list of typical targets execute "make help"
+@@ -644,7 +644,7 @@ export mod_strip_cmd
+ 
+ 
+ ifeq ($(KBUILD_EXTMOD),)
+-core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/
++core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/ ptag/ tagstat/
+ 
+ vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+ 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
+diff -prauN linux-2.6.32.22-PRISTINE/ptag/Kconfig linux-2.6.32.22/ptag/Kconfig
+--- linux-2.6.32.22-PRISTINE/ptag/Kconfig	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/ptag/Kconfig	2016-06-15 14:52:00.023757939 -0600
+@@ -0,0 +1,5 @@
++config PTAG
++	bool "Add a tag to a PID"
++	default y
++	---help---
++	A system call that adds a tag to a process ID
+diff -prauN linux-2.6.32.22-PRISTINE/ptag/Makefile linux-2.6.32.22/ptag/Makefile
+--- linux-2.6.32.22-PRISTINE/ptag/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/ptag/Makefile	2016-06-15 15:34:00.928049470 -0600
+@@ -0,0 +1 @@
++obj-$(CONFIG_PTAG) := ptag.o
+diff -prauN linux-2.6.32.22-PRISTINE/ptag/ptag.c linux-2.6.32.22/ptag/ptag.c
+--- linux-2.6.32.22-PRISTINE/ptag/ptag.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/ptag/ptag.c	2016-06-16 18:35:46.527540426 -0600
+@@ -0,0 +1,66 @@
++#include <linux/kernel.h>
++#include <linux/linkage.h>
++#include <linux/pid.h>
++#include <linux/sched.h>
++#include <linux/list.h>
++
++#define EPODRF -1
++
++asmlinkage long sys_ptag(pid_t pid, char *tag, int mode) {
++
++	struct ptag_node *node, *next;
++	struct task_struct *ts;
++	int pid_exists = 0;
++
++	for_each_process(ts) {
++		if (ts->pid == pid)
++			pid_exists = 1;
++	}
++
++	if (pid_exists == 0) {
++		printk("%d is not a valid PID\n", pid);
++		return 1;
++	} else {
++		ts = pid_task(find_vpid((pid_t) pid), PIDTYPE_PID);
++		task_lock(ts);
++
++		if (mode == 0) {
++			int exists = 0;
++			list_for_each_entry(node, &ts->ptag_list, list) {
++				if (strcmp(node->ptag,tag) == 0)
++					exists = 1;
++			}
++			if (exists == 0) {
++				node = kmalloc(sizeof(node), GFP_KERNEL);
++				node->ptag = kmalloc(sizeof(tag), GFP_KERNEL);
++				strcpy(node->ptag, tag);
++				list_add_tail(&node->list, &ts->ptag_list);
++				printk("Tag %s attached to process %d\n", tag, pid);
++			} else {
++				printk("Tag %s already attached to process %d\n", tag, pid);
++				task_unlock(ts);
++				return 2;
++			}
++		} else if (mode == 1) {
++			int success = 0;
++			list_for_each_entry_safe(node, next, &ts->ptag_list, list) {
++				if (strcmp(node->ptag,tag) == 0) {
++					// TODO delete, free mem
++					list_del(&node->list);
++					//kfree(&node);
++					printk("Tag %s removed from process %d\n", tag, pid);
++					success = 1;
++				}
++			}
++			if (success == 0) {
++				printk("Tag %s not associated with process %d\n", tag, pid);
++				task_unlock(ts);
++				return 3;
++			}
++		}
++
++		task_unlock(ts);
++	}
++
++	return 0;
++}
+diff -prauN linux-2.6.32.22-PRISTINE/tagstat/Kconfig linux-2.6.32.22/tagstat/Kconfig
+--- linux-2.6.32.22-PRISTINE/tagstat/Kconfig	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/tagstat/Kconfig	2016-06-15 15:35:06.177749081 -0600
+@@ -0,0 +1,5 @@
++config TAGSTAT
++	bool "Read PID tags in /proc file"
++	default y
++	---help---
++	Reads PID tags created by "ptag" into /proc/tagstat
+diff -prauN linux-2.6.32.22-PRISTINE/tagstat/Makefile linux-2.6.32.22/tagstat/Makefile
+--- linux-2.6.32.22-PRISTINE/tagstat/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/tagstat/Makefile	2016-06-15 15:38:07.407748793 -0600
+@@ -0,0 +1,7 @@
++obj-m := tagstat.o
++
++KDIR := /lib/modules/$(shell uname -r)/build
++PWD  := $(shell pwd)
++
++default:
++	$(MAKE) -C $(KDIR) M=$(PWD) modules
+diff -prauN linux-2.6.32.22-PRISTINE/tagstat/tagstat.c linux-2.6.32.22/tagstat/tagstat.c
+--- linux-2.6.32.22-PRISTINE/tagstat/tagstat.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/tagstat/tagstat.c	2016-06-16 19:11:22.883142619 -0600
+@@ -0,0 +1,69 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/proc_fs.h>
++#include <linux/seq_file.h>
++#include <linux/sched.h>
++#include <linux/kernel.h>
++
++static int tagstat_show(struct seq_file *m, void *v) {
++	struct task_struct *ts;
++	struct ptag_node *node;
++	char *status;
++
++	for_each_process(ts) {
++		list_for_each_entry(node, &ts->ptag_list, list) {
++			seq_printf(m, "%d : %s ", ts->pid, node->ptag);
++			switch(ts->state) {
++				case -1:
++					status = "Unrunnable";
++					break;
++				case TASK_RUNNING:
++					status = "Running";
++					break;
++				case TASK_INTERRUPTIBLE:
++					status = "Interruptible";
++					break;
++				case TASK_UNINTERRUPTIBLE:
++					status = "Uninterruptible";
++					break;
++				case TASK_STOPPED:
++					status = "Stopped";
++					break;
++				case TASK_TRACED:
++					status = "Traced";
++					break;
++				default:
++					status = "Unknown";
++			}
++			seq_printf(m, "(%s)\n", status);
++		}
++	}
++
++	return 0;
++}
++
++static int tagstat_open(struct inode *inode, struct file *file) {
++	return single_open(file, tagstat_show, NULL);
++}
++
++static const struct file_operations tagstat_fops = {
++	.owner = THIS_MODULE,
++	.open = tagstat_open,
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
++static int __init tagstat_init(void) {
++	proc_create("ptag", 0, NULL, &tagstat_fops);
++	return 0;
++}
++
++static void __exit tagstat_exit(void) {
++	remove_proc_entry("ptag", NULL);
++}
++
++module_init(tagstat_init);
++module_exit(tagstat_exit);
++
++MODULE_LICENSE("GPL");
+diff -prauN linux-2.6.32.22-PRISTINE/tagstat/.tmp_versions/tagstat.mod linux-2.6.32.22/tagstat/.tmp_versions/tagstat.mod
+--- linux-2.6.32.22-PRISTINE/tagstat/.tmp_versions/tagstat.mod	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.32.22/tagstat/.tmp_versions/tagstat.mod	2016-06-16 19:11:24.742170810 -0600
+@@ -0,0 +1,2 @@
++/root/mnt/kernel_dev/linux-2.6.32.22/tagstat/tagstat.ko
++/root/mnt/kernel_dev/linux-2.6.32.22/tagstat/tagstat.o

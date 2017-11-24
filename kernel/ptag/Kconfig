@@ -1,0 +1,5 @@
+config PTAG
+	bool "Add a tag to a PID"
+	default y
+	---help---
+	A system call that adds a tag to a process ID
